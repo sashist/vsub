@@ -117,7 +117,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.links = msg.links
 		m.srvCursor = 0
 		m.srvOffset = 0
-		m.setOK(fmt.Sprintf("Загружено %d VLESS-ссылок", len(msg.links)))
+		m.setOK(fmt.Sprintf("Loaded %d VLESS links", len(msg.links)))
 		return m, nil
 	}
 
@@ -190,20 +190,20 @@ func (m uiModel) activateMenu(idx int) (tea.Model, tea.Cmd) {
 		return m, m.input.Focus()
 	case 1:
 		if len(m.links) == 0 {
-			m.setErr("Сначала загрузи подписку (пункт 1)")
+			m.setErr("Load a subscription first (option 1)")
 			return m, nil
 		}
 		m.screen = scrServers
 	case 2:
 		if len(m.links) == 0 {
-			m.setErr("Сначала загрузи подписку (пункт 1)")
+			m.setErr("Load a subscription first (option 1)")
 			return m, nil
 		}
 		m.subCursor = 0
 		m.screen = scrCopyFmt
 	case 3:
 		if len(m.links) == 0 {
-			m.setErr("Сначала загрузи подписку (пункт 1)")
+			m.setErr("Load a subscription first (option 1)")
 			return m, nil
 		}
 		m.subCursor = 0
@@ -225,7 +225,7 @@ func (m uiModel) updateURLInput(key tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.input.Blur()
 		if rawURL == "" {
 			m.screen = scrMenu
-			m.setErr("Отменено (пустой ввод)")
+			m.setErr("Cancelled (empty input)")
 			return m, nil
 		}
 		m.screen = scrLoading
@@ -292,7 +292,7 @@ func (m uiModel) updateServers(key tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.setErr(err.Error())
 			return m, nil
 		}
-		m.setOK("Скопирован: " + linkName(link))
+		m.setOK("Copied: " + linkName(link))
 		return m, nil
 	}
 	m.clampServerScroll()
@@ -315,14 +315,14 @@ func (m uiModel) updateCopyFormat(key tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 	text, err := formatLinks(m.links, fmtName)
 	if err != nil {
-		m.setErr("Ошибка форматирования: " + err.Error())
+		m.setErr("format error: " + err.Error())
 		return m, nil
 	}
 	if err := copyToClipboard(text); err != nil {
 		m.setErr(err.Error())
 		return m, nil
 	}
-	m.setOK(fmt.Sprintf("Скопировано %d ссылок (%s) в буфер", len(m.links), fmtName))
+	m.setOK(fmt.Sprintf("Copied %d links (%s) to clipboard", len(m.links), fmtName))
 	return m, nil
 }
 
@@ -368,14 +368,14 @@ func (m uiModel) updateSaveFile(key tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 		text, err := formatLinks(m.links, m.saveFormat)
 		if err != nil {
-			m.setErr("Ошибка форматирования: " + err.Error())
+			m.setErr("format error: " + err.Error())
 			return m, nil
 		}
 		if err := os.WriteFile(target, []byte(text), 0644); err != nil {
-			m.setErr("Ошибка сохранения: " + err.Error())
+			m.setErr("save error: " + err.Error())
 			return m, nil
 		}
-		m.setOK(fmt.Sprintf("Сохранено %d ссылок в %s (%s)", len(m.links), target, m.saveFormat))
+		m.setOK(fmt.Sprintf("Saved %d links to %s (%s)", len(m.links), target, m.saveFormat))
 		return m, nil
 	}
 	var cmd tea.Cmd
@@ -407,24 +407,24 @@ func navigateSub(cursor *int, count int, key tea.KeyMsg) (picked int, done bool)
 func (m uiModel) View() string {
 	switch m.screen {
 	case scrURL:
-		return m.viewPrompt("Вставить ссылку подписки", "Вставь URL и нажми Enter (Esc — назад):")
+		return m.viewPrompt("Paste subscription URL", "Enter URL and press Enter (Esc to cancel):")
 	case scrLoading:
-		return "\n  " + m.spin.View() + " Загрузка подписки...\n"
+		return "\n  " + m.spin.View() + " Fetching subscription...\n"
 	case scrServers:
 		return m.viewServers()
 	case scrCopyFmt:
-		return viewSubMenu("Формат для копирования в буфер", []string{
-			"TXT — список ссылок построчно",
-			"Base64 — подписка одной строкой",
+		return viewSubMenu("Clipboard format", []string{
+			"TXT — plain vless:// list",
+			"Base64 — encoded subscription",
 		}, m.subCursor)
 	case scrSaveFmt:
-		return viewSubMenu("Формат файла", []string{
-			"TXT — список ссылок построчно (vless_servers.txt)",
-			"Base64 — закодированная подписка (vless_sub.b64)",
-			"JSON — массив серверов с названиями (vless_servers.json)",
+		return viewSubMenu("File format", []string{
+			"TXT — plain vless:// list (vless_servers.txt)",
+			"Base64 — encoded subscription (vless_sub.b64)",
+			"JSON — server list with names (vless_servers.json)",
 		}, m.subCursor)
 	case scrSaveFile:
-		return m.viewPrompt("Сохранить в файл ("+m.saveFormat+")", "Имя файла (Enter — сохранить, Esc — назад):")
+		return m.viewPrompt("Save to file ("+m.saveFormat+")", "File path (Enter to save, Esc to cancel):")
 	default:
 		return m.viewMain()
 	}
@@ -433,12 +433,12 @@ func (m uiModel) View() string {
 func (m uiModel) viewMain() string {
 	var b strings.Builder
 
-	header := headerBoxStyle.Render(titleStyle.Render("vsub") + "  " + dimStyle.Render("конвертер VLESS-подписок"))
+	header := headerBoxStyle.Render(titleStyle.Render("vsub") + "  " + dimStyle.Render("VLESS subscription parser"))
 	b.WriteString("\n")
 	b.WriteString(indentBlock(header, "  "))
 	b.WriteString("\n\n")
 
-	src := dimStyle.Render("не задан")
+	src := dimStyle.Render("none")
 	if m.source != "" {
 		src = truncateRunes(m.source, 60)
 	}
@@ -447,19 +447,19 @@ func (m uiModel) viewMain() string {
 		cnt = okStyle.Bold(true).Render(fmt.Sprintf("%d", len(m.links)))
 	}
 
-	b.WriteString(fmt.Sprintf("  %s  %s\n", dimStyle.Render("HWID    "), m.hwid))
-	b.WriteString(fmt.Sprintf("  %s  %s\n", dimStyle.Render("Источник"), src))
-	b.WriteString(fmt.Sprintf("  %s  %s\n\n", dimStyle.Render("Серверов"), cnt))
+	b.WriteString(fmt.Sprintf("  %s  %s\n", dimStyle.Render("HWID   "), m.hwid))
+	b.WriteString(fmt.Sprintf("  %s  %s\n", dimStyle.Render("Source "), src))
+	b.WriteString(fmt.Sprintf("  %s  %s\n\n", dimStyle.Render("Servers"), cnt))
 
 	renderOptions(&b, []string{
-		"Вставить ссылку подписки",
-		"Список серверов (выбрать и скопировать)",
-		"Скопировать все ссылки в буфер",
-		"Сохранить в файл (txt / base64 / json)",
-		"Выход",
+		"Paste subscription URL",
+		"Server list (select & copy)",
+		"Copy all to clipboard",
+		"Save to file (txt / base64 / json)",
+		"Quit",
 	}, m.cursor)
 
-	b.WriteString("\n  " + dimStyle.Render("↑/↓ + Enter · 1-5 · q выход") + "\n")
+	b.WriteString("\n  " + dimStyle.Render("↑/↓ + Enter · 1-5 · q quit") + "\n")
 	if m.statusMsg != "" {
 		if m.statusErr {
 			b.WriteString("\n  " + errStyle.Render("✗ "+m.statusMsg) + "\n")
@@ -483,7 +483,7 @@ func (m uiModel) viewServers() string {
 	page := m.serverPageSize()
 	end := min(m.srvOffset+page, len(m.links))
 
-	header := fmt.Sprintf("Серверы (%d–%d из %d)", m.srvOffset+1, end, len(m.links))
+	header := fmt.Sprintf("Servers (%d–%d of %d)", m.srvOffset+1, end, len(m.links))
 	b.WriteString("\n  " + titleStyle.Render(header) + "\n")
 	b.WriteString("  " + dimStyle.Render(strings.Repeat("─", 44)) + "\n\n")
 
@@ -500,7 +500,7 @@ func (m uiModel) viewServers() string {
 		}
 	}
 
-	b.WriteString("\n  " + dimStyle.Render("↑/↓ · PgUp/PgDn · Enter скопировать · Esc/q назад") + "\n")
+	b.WriteString("\n  " + dimStyle.Render("↑/↓ · PgUp/PgDn · Enter copy · Esc/q back") + "\n")
 	return b.String()
 }
 
@@ -509,7 +509,7 @@ func viewSubMenu(title string, options []string, cursor int) string {
 	b.WriteString("\n  " + titleStyle.Render(title) + "\n")
 	b.WriteString("  " + dimStyle.Render(strings.Repeat("─", 44)) + "\n\n")
 	renderOptions(&b, options, cursor)
-	b.WriteString(fmt.Sprintf("\n  %s\n", dimStyle.Render(fmt.Sprintf("↑/↓ + Enter · 1-%d · Esc/q назад", len(options)))))
+	b.WriteString(fmt.Sprintf("\n  %s\n", dimStyle.Render(fmt.Sprintf("↑/↓ + Enter · 1-%d · Esc/q back", len(options)))))
 	return b.String()
 }
 

@@ -124,7 +124,7 @@ func formatLinks(links []string, format string) (string, error) {
 func loadLinks(rawURL string) ([]string, error) {
 	rawURL = strings.TrimSpace(rawURL)
 	if !strings.HasPrefix(rawURL, "http://") && !strings.HasPrefix(rawURL, "https://") {
-		return nil, errors.New("ссылка должна начинаться с http:// или https://")
+		return nil, errors.New("url must start with http:// or https://")
 	}
 	return fetchAndParse(rawURL)
 }
